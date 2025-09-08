@@ -1,127 +1,56 @@
-# Data Model for Visual Keyboard Layout Builder
+# Data Model
 
-This document defines the TypeScript data structures that will be used to represent the keyboard layout in the application. These structures are designed to be compatible with Ergogen's YAML format.
+**Date**: 2025-09-08
 
-## Core Data Structures
+This document defines the core data entities for the keyboard layout builder, based on the feature specification.
 
-The entire keyboard layout can be represented by the `KeebLayout` interface.
+## Entities
 
-```typescript
-interface KeebLayout {
-  meta?: {
-    name?: string;
-    author?: string;
-  };
-  units?: {
-    [unitName: string]: any;
-  };
-  points: {
-    zones: {
-      [zoneName: string]: Zone;
-    };
-  };
-  outlines?: {
-    [outlineName: string]: Outline;
-  };
-  cases?: {
-    [caseName: string]: Case;
-  };
-  pcbs?: {
-    [pcbName: string]: PCB;
-  };
-}
+### `KeyboardLayout`
 
-## Points and Keys
+Represents the entire keyboard design.
 
-The `points` section is the most critical part of the layout. It defines the position, rotation, and other properties of each key. The `keys` are defined within the `points` section.
+| Property | Type | Description |
+|---|---|---|
+| `type` | `"split"` or `"monoblock"` | The type of keyboard layout. |
+| `zones` | `KeyZone[]` | A collection of key zones that make up the layout. |
 
-```typescript
-interface KeyCommon {
-  stagger?: number;
-  spread?: number;
-  splay?: number;
-  rotate?: number;
-  shift?: [number, number];
-  // and other ergogen properties
-}
+### `KeyZone`
 
-interface Key extends KeyCommon {
-  // Individual key properties, can override zone properties
-}
+A group of keys, which can be a logical grouping like a thumb cluster or a main key matrix.
 
-interface Zone extends KeyCommon {
-  rows?: {
-    [rowName: string]: KeyCommon;
-  };
-  columns?: {
-    [columnName: string]: KeyCommon;
-  };
-  keys: {
-    [keyName: string]: Key;
-  };
-}
-```
+| Property | Type | Description |
+|---|---|---|
+| `id` | `string` | A unique identifier for the zone. |
+| `name` | `string` | A user-friendly name for the zone (e.g., "Left Thumb Cluster"). |
+| `keys` | `Key[]` | The keys belonging to this zone. |
 
-## Outlines
+### `Key`
 
-The `outlines` section defines the shape of the keyboard case and plate.
+Represents a single key on the keyboard.
 
-```typescript
-interface Outline {
-  type: 'line' | 'arc' | 'polygon';
-  // other properties depending on the type
-}
-```
+| Property | Type | Description |
+|---|---|---|
+| `id` | `string` | A unique identifier for the key. |
+| `x` | `number` | The x-coordinate of the key's center point. |
+| `y` | `number` | The y-coordinate of the key's center point. |
+| `rotation` | `number` | The rotation of the key in degrees. |
+| `switch` | `Switch` | The switch type for this key. |
 
-```
+### `Switch`
 
-## Points
+Represents the type of mechanical switch, which determines the physical dimensions of the key.
 
-The `points` section is the core of the layout. It defines the position of each key.
+| Property | Type | Description |
+|---|---|---|
+| `name` | `string` | The name of the switch (e.g., "Choc v2"). |
+| `footprint` | `{ width: number; height: number; }` | The physical dimensions of the switch. |
 
-```typescript
-interface Point {
-  x: number;
-  y: number;
-  r: number; // Rotation
-}
+### `GlobalSettings`
 
-interface Key {
-  // Properties of a key, e.g., size, type
-}
+Represents user-configurable settings that affect the entire layout.
 
-interface Zone {
-  points: Point[];
-  keys: Key[];
-}
-```
-
-## Outlines
-
-The `outlines` section defines the shape of the keyboard case and plate.
-
-```typescript
-interface Outline {
-  // Properties of an outline, e.g., path, thickness
-}
-```
-
-## Cases
-
-The `cases` section defines the 3D printable case.
-
-```typescript
-interface Case {
-  // Properties of a case, e.g., height, wall thickness
-}
-```
-
-## PCBs
-
-The `pcbs` section defines the printed circuit board.
-
-```typescript
-interface PCB {
-  // Properties of a PCB, e.g., controller, diodes
-}
-```
+| Property | Type | Description |
+|---|---|---|
+| `unit` | `"mm"` or `"U"` | The preferred display unit for measurements. |
+| `uValue` | `number` | The value of `1U` in millimeters (e.g., 19.05). |

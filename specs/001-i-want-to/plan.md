@@ -1,102 +1,237 @@
-# Implementation Plan: Visual Keyboard Layout Builder
+# Implementation Plan: [FEATURE]
 
-**Branch**: `001-i-want-to` | **Date**: 2025-09-08 | **Spec**: [spec.md](./spec.md)
-**Input**: Feature specification from `/specs/001-i-want-to/spec.md`
+**Branch**: `[###-feature-name]` | **Date**: [DATE] | **Spec**: [link]
+**Input**: Feature specification from `/specs/[###-feature-name]/spec.md`
+
+## Execution Flow (/plan command scope)
+```
+1. Load feature spec from Input path
+   → If not found: ERROR "No feature spec at {path}"
+2. Fill Technical Context (scan for NEEDS CLARIFICATION)
+   → Detect Project Type from context (web=frontend+backend, mobile=app+api)
+   → Set Structure Decision based on project type
+3. Evaluate Constitution Check section below
+   → If violations exist: Document in Complexity Tracking
+   → If no justification possible: ERROR "Simplify approach first"
+   → Update Progress Tracking: Initial Constitution Check
+4. Execute Phase 0 → research.md
+   → If NEEDS CLARIFICATION remain: ERROR "Resolve unknowns"
+5. Execute Phase 1 → contracts, data-model.md, quickstart.md, agent-specific template file (e.g., `CLAUDE.md` for Claude Code, `.github/copilot-instructions.md` for GitHub Copilot, or `GEMINI.md` for Gemini CLI).
+6. Re-evaluate Constitution Check section
+   → If new violations: Refactor design, return to Phase 1
+   → Update Progress Tracking: Post-Design Constitution Check
+7. Plan Phase 2 → Describe task generation approach (DO NOT create tasks.md)
+8. STOP - Ready for /tasks command
+```
+
+**IMPORTANT**: The /plan command STOPS at step 7. Phases 2-4 are executed by other commands:
+- Phase 2: /tasks command creates tasks.md
+- Phase 3-4: Implementation execution (manual or via tools)
 
 ## Summary
-This plan outlines the development of a web application for visually building ergonomic mechanical keyboard layouts. The application will serve as an interactive frontend for the **Ergogen** layout engine. Users will manipulate a visual representation of the keyboard, and the application state will be synchronized with an Ergogen-compatible data structure. The primary technical goal is to provide an intuitive UI that generates a valid Ergogen YAML file for users to download and use with offline tooling.
+[Extract from feature spec: primary requirement + technical approach from research]
 
 ## Technical Context
-**Language/Version**: TypeScript 5.x
-**Primary Dependencies**: Next.js (React 18+), three.js, @react-three/fiber, zustand, tailwindcss, **js-yaml**
-**Core Engine**: **Ergogen** (for layout definition and file generation logic)
-**Storage**: N/A (State managed on the client-side)
-**Testing**: Jest, React Testing Library
-**Target Platform**: Modern Web Browsers
-**Project Type**: Web Application (Frontend)
-**Performance Goals**: Maintain 60 FPS during 3D view manipulation. UI interactions should be instant.
-**Constraints**: The application's internal data model MUST be serializable to an Ergogen-compatible YAML format. The MVP will focus on generating the YAML file, not on running Ergogen within the browser.
-**Scale/Scope**: The application should handle layouts up to ~200 keys without performance degradation.
+**Language/Version**: TypeScript, React, Next.js  
+**Primary Dependencies**: `next`, `react`, `react-three/fiber`, `three`, `zustand`, `js-yaml`  
+**Storage**: Files (YAML download)  
+**Testing**: `jest`, `@testing-library/react`  
+**Target Platform**: Web Browser
+**Project Type**: web  
+**Performance Goals**: N/A for MVP  
+**Constraints**: N/A for MVP  
+**Scale/Scope**: N/A for MVP
 
 ## Constitution Check
-*This plan adheres to the principles outlined in `memory/constitution.md`.* 
+*GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
+
+**Simplicity**:
+- Projects: [#] (max 3 - e.g., api, cli, tests)
+- Using framework directly? (no wrapper classes)
+- Single data model? (no DTOs unless serialization differs)
+- Avoiding patterns? (no Repository/UoW without proven need)
+
+**Architecture**:
+- EVERY feature as library? (no direct app code)
+- Libraries listed: [name + purpose for each]
+- CLI per library: [commands with --help/--version/--format]
+- Library docs: llms.txt format planned?
+
+**Testing (NON-NEGOTIABLE)**:
+- RED-GREEN-Refactor cycle enforced? (test MUST fail first)
+- Git commits show tests before implementation?
+- Order: Contract→Integration→E2E→Unit strictly followed?
+- Real dependencies used? (actual DBs, not mocks)
+- Integration tests for: new libraries, contract changes, shared schemas?
+- FORBIDDEN: Implementation before test, skipping RED phase
+
+**Observability**:
+- Structured logging included?
+- Frontend logs → backend? (unified stream)
+- Error context sufficient?
+
+**Versioning**:
+- Version number assigned? (MAJOR.MINOR.BUILD)
+- BUILD increments on every change?
+- Breaking changes handled? (parallel tests, migration plan)
 
 ## Project Structure
 
 ### Documentation (this feature)
 ```
-specs/001-i-want-to/
-├── plan.md              # This file
-├── research.md          # Phase 0 output
-├── data-model.md        # Phase 1 output
-├── contracts/           # Phase 1 output
-├── quickstart.md        # Phase 1 output
-└── tasks.md             # Phase 2 output
+specs/[###-feature]/
+├── plan.md              # This file (/plan command output)
+├── research.md          # Phase 0 output (/plan command)
+├── data-model.md        # Phase 1 output (/plan command)
+├── quickstart.md        # Phase 1 output (/plan command)
+├── contracts/           # Phase 1 output (/plan command)
+└── tasks.md             # Phase 2 output (/tasks command - NOT created by /plan)
 ```
 
 ### Source Code (repository root)
 ```
-# Frontend Application Structure
+# Option 1: Single project (DEFAULT)
 src/
-├── app/                 # Next.js App Router
-├── components/          # Reusable React components
-├── store/               # Zustand store
-├── lib/                 # Core logic, including Ergogen data mapping
-└── styles/              # Global styles
+├── models/
+├── services/
+├── cli/
+└── lib/
 
 tests/
 ├── contract/
 ├── integration/
 └── unit/
+
+# Option 2: Web application (when "frontend" + "backend" detected)
+backend/
+├── src/
+│   ├── models/
+│   ├── services/
+│   └── api/
+└── tests/
+
+frontend/
+├── src/
+│   ├── components/
+│   ├── pages/
+│   └── services/
+└── tests/
+
+# Option 3: Mobile + API (when "iOS/Android" detected)
+api/
+└── [same as backend above]
+
+ios/ or android/
+└── [platform-specific structure]
 ```
 
-**Structure Decision**: A single frontend project based on the Next.js App Router structure.
+**Structure Decision**: [DEFAULT to Option 1 unless Technical Context indicates web/mobile app]
 
 ## Phase 0: Outline & Research
-1. **Research Tasks**:
-   - **Ergogen Core**: Research Ergogen's YAML configuration structure, focusing on `points`, `outlines`, and `keys`.
-   - **Data Mapping**: Investigate best practices for mapping an interactive UI state to a declarative YAML structure like Ergogen's.
-   - **YAML Generation**: Research client-side YAML generation and file download in JavaScript using `js-yaml`.
-   - **State Management**: Find best practices for Zustand for a state that is both interactive and needs to be cleanly serialized.
-   - **3D Performance**: Research performance optimization for `@react-three/fiber` (still relevant for the visual preview).
+1. **Extract unknowns from Technical Context** above:
+   - For each NEEDS CLARIFICATION → research task
+   - For each dependency → best practices task
+   - For each integration → patterns task
 
-2. **Consolidate findings** in `research.md`.
+2. **Generate and dispatch research agents**:
+   ```
+   For each unknown in Technical Context:
+     Task: "Research {unknown} for {feature context}"
+   For each technology choice:
+     Task: "Find best practices for {tech} in {domain}"
+   ```
 
-**Output**: `research.md` with decisions on the data model structure and serialization strategy.
+3. **Consolidate findings** in `research.md` using format:
+   - Decision: [what was chosen]
+   - Rationale: [why chosen]
+   - Alternatives considered: [what else evaluated]
+
+**Output**: research.md with all NEEDS CLARIFICATION resolved
 
 ## Phase 1: Design & Contracts
 *Prerequisites: research.md complete*
 
-1. **Define Data Models** in `data-model.md`:
-   - Formalize the data structures in TypeScript, mirroring Ergogen's object model (e.g., `points`, `keys`).
-2. **Define Contracts** in `contracts/`:
-   - **State Contract**: Define the Zustand store shape and actions, including an action to trigger YAML export.
-   - **Component Contracts**: Define props interfaces for major UI components.
-3. **Generate Initial Tests**:
-   - Write failing unit tests for the Ergogen data transformation logic.
-   - Write a failing integration test for the "Download YAML" feature.
-4. **Create Quickstart Guide** in `quickstart.md`:
-   - Add a validation step to download the YAML file and check its basic structure.
+1. **Extract entities from feature spec** → `data-model.md`:
+   - Entity name, fields, relationships
+   - Validation rules from requirements
+   - State transitions if applicable
 
-**Output**: `data-model.md`, `contracts/`, `quickstart.md`, and initial failing tests.
+2. **Generate API contracts** from functional requirements:
+   - For each user action → endpoint
+   - Use standard REST/GraphQL patterns
+   - Output OpenAPI/GraphQL schema to `/contracts/`
+
+3. **Generate contract tests** from contracts:
+   - One test file per endpoint
+   - Assert request/response schemas
+   - Tests must fail (no implementation yet)
+
+4. **Extract test scenarios** from user stories:
+   - Each story → integration test scenario
+   - Quickstart test = story validation steps
+
+5. **Update agent file incrementally** (O(1) operation):
+   - Run `/scripts/update-agent-context.sh [claude|gemini|copilot]` for your AI assistant
+   - If exists: Add only NEW tech from current plan
+   - Preserve manual additions between markers
+   - Update recent changes (keep last 3)
+   - Keep under 150 lines for token efficiency
+   - Output to repository root
+
+**Output**: data-model.md, /contracts/*, failing tests, quickstart.md, agent-specific file
 
 ## Phase 2: Task Planning Approach
-*This section describes what the /tasks command will do.*
+*This section describes what the /tasks command will do - DO NOT execute during /plan*
 
 **Task Generation Strategy**:
-- A `tasks.md` file will be generated based on the design artifacts.
-- **Setup**: Tasks for initializing the project and dependencies.
-- **State & Data Model**: Tasks to implement the Ergogen-aligned data model and Zustand store.
-- **Ergogen Integration**: Tasks to create the data mapping logic to convert the store's state to a valid Ergogen YAML string.
-- **UI Shell & 2D View**: Tasks to build the main UI and 2D layout view.
-- **Interactivity**: Tasks for selection, nudging, and rotation, ensuring these actions correctly modify the Ergogen-compatible state.
-- **3D Preview**: Tasks to build the `three.js` preview.
-- **Core Feature**: Tasks to implement the "Download YAML" functionality.
+- Load `/templates/tasks-template.md` as base
+- Generate tasks from Phase 1 design docs (contracts, data model, quickstart)
+- Each contract → contract test task [P]
+- Each entity → model creation task [P] 
+- Each user story → integration test task
+- Implementation tasks to make tests pass
 
-**Ordering Strategy**: Core Data Model → State Management → 2D View → Interactivity → Ergogen Serialization → 3D Preview.
+**Ordering Strategy**:
+- TDD order: Tests before implementation 
+- Dependency order: Models before services before UI
+- Mark [P] for parallel execution (independent files)
+
+**Estimated Output**: 25-30 numbered, ordered tasks in tasks.md
+
+**IMPORTANT**: This phase is executed by the /tasks command, NOT by /plan
+
+## Phase 3+: Future Implementation
+*These phases are beyond the scope of the /plan command*
+
+**Phase 3**: Task execution (/tasks command creates tasks.md)  
+**Phase 4**: Implementation (execute tasks.md following constitutional principles)  
+**Phase 5**: Validation (run tests, execute quickstart.md, performance validation)
+
+## Complexity Tracking
+*Fill ONLY if Constitution Check has violations that must be justified*
+
+| Violation | Why Needed | Simpler Alternative Rejected Because |
+|-----------|------------|-------------------------------------|
+| [e.g., 4th project] | [current need] | [why 3 projects insufficient] |
+| [e.g., Repository pattern] | [specific problem] | [why direct DB access insufficient] |
+
 
 ## Progress Tracking
-- [X] Phase 0: Research complete
-- [X] Phase 1: Design complete
-- [X] Phase 2: Task planning approach defined
-- [X] Phase 3: Tasks generated
+*This checklist is updated during execution flow*
+
+**Phase Status**:
+- [ ] Phase 0: Research complete (/plan command)
+- [ ] Phase 1: Design complete (/plan command)
+- [ ] Phase 2: Task planning complete (/plan command - describe approach only)
+- [ ] Phase 3: Tasks generated (/tasks command)
+- [ ] Phase 4: Implementation complete
+- [ ] Phase 5: Validation passed
+
+**Gate Status**:
+- [ ] Initial Constitution Check: PASS
+- [ ] Post-Design Constitution Check: PASS
+- [ ] All NEEDS CLARIFICATION resolved
+- [ ] Complexity deviations documented
+
+---
+*Based on Constitution v2.1.1 - See `/memory/constitution.md`*

@@ -5,8 +5,11 @@ import { generateYaml } from '../lib/ergogen';
 export interface KeebState {
   layout: KeebLayout;
   selectedKey: { zoneName: string; keyName: string } | null;
+  selectedZone: string | null;
   setSelectedKey: (zoneName: string, keyName: string) => void;
   clearSelectedKey: () => void;
+  setSelectedZone: (zoneName: string) => void;
+  clearSelectedZone: () => void;
   setLayout: (layout: KeebLayout) => void;
   setMeta: (meta: KeebLayout['meta']) => void;
   addZone: (zoneName: string) => void;
@@ -39,8 +42,11 @@ export const useStore = create<KeebState>((set, get) => ({
     },
   },
   selectedKey: null,
+  selectedZone: null,
   setSelectedKey: (zoneName, keyName) => set({ selectedKey: { zoneName, keyName } }),
   clearSelectedKey: () => set({ selectedKey: null }),
+  setSelectedZone: (zoneName) => set({ selectedZone: zoneName }),
+  clearSelectedZone: () => set({ selectedZone: null }),
   setLayout: (layout) => set({ layout }),
   setMeta: (meta) => set((state) => ({ layout: { ...state.layout, meta } })),
   addZone: (zoneName) =>

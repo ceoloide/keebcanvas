@@ -14,6 +14,7 @@ export const KeyView = ({ zoneName, keyName, keyData }: { zoneName: string; keyN
   return (
     <div
       onClick={handleClick}
+      data-testid={`key-${keyName}`}
       style={{
         border: isSelected ? '2px solid blue' : '1px solid black',
         padding: '10px',

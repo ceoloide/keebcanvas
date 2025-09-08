@@ -1,100 +1,62 @@
-# Research Findings for Visual Keyboard Layout Builder
+# Research: Frontend Technologies
 
-This document summarizes the research for building the visual keyboard layout builder.
+**Date**: 2025-09-08
 
-## Phase 0: Outline & Research
+## Summary
 
-### 1. Ergogen Core YAML Structure
+This research phase focused on establishing best practices for the core frontend technologies selected for the project: `react-three/fiber` for 3D visualization and `zustand` for state management. The findings below will guide the implementation to ensure a performant, maintainable, and scalable application.
 
-Based on the web search, the core of Ergogen's configuration is the YAML file structure. Here are the key takeaways:
+## `react-three/fiber` Best Practices
 
-*   **`points` (Required)**: This is the most important section. It defines the position and rotation of each key.
-    *   Keys are organized into `zones`, which contain `columns` and `rows`.
-    *   Properties like `stagger`, `spread`, and `splay` control the key arrangement.
-    *   Each point is ultimately defined by `[x, y]` coordinates and a rotation.
+`react-three/fiber` (R3F) is a powerful renderer for building 3D scenes in React. The key to using it effectively is to blend React's component model with Three.js's performance considerations.
 
-*   **`outlines` (Optional)**: This section uses the `points` to generate 2D outlines for the case and plate. This is useful for creating the visual representation of the keyboard.
+### Core Principles
 
-*   **`cases` (Optional)**: This section extrudes the 2D `outlines` to create 3D models.
+- **Declarative Structure**: Scenes should be built using small, reusable React components. This is more maintainable than imperative Three.js code.
+- **Embrace the Ecosystem**: `@react-three/drei` is an essential toolkit that provides pre-built components, helpers, and abstractions (e.g., camera controls, shaders, performance monitors). It should be considered a standard dependency.
 
-*   **`pcbs` (Optional)**: This section generates PCB files for the keyboard.
+### Performance Optimization
 
-*   **`units` (Optional)**: Allows defining reusable variables to reduce repetition.
+- **On-Demand Rendering**: For static scenes, use `<Canvas frameloop="demand">` to prevent the 60fps render loop, saving significant GPU resources. Re-renders will only happen when props change or an interaction (like camera movement) occurs.
+- **Reuse Geometries and Materials**: Avoid creating geometries and materials inside component render functions. Define them once outside the component or memoize them with `useMemo` to prevent re-creation on every render.
+- **Instancing**: For rendering many identical objects, use `InstancedMesh` to render them all in a single draw call.
+- **Asset Optimization**: Use `gltfjsx` to convert GLTF models into compressed JSX components, which drastically reduces file sizes.
 
-*   **`meta` (Optional)**: Contains metadata about the keyboard, like the author and name.
+### State and Animations
 
-*   **File Format**: While YAML is the most common, JSON and JavaScript are also supported.
+- **Use `useFrame` for Animations**: For high-frequency updates like animations, get a `ref` to the object and mutate its properties directly inside the `useFrame` hook. This bypasses React's render cycle and is highly performant. **Do not** use `useState` for state that changes every frame.
+- **Separate State Concerns**: Use a dedicated state management library like `zustand` for low-frequency "app state" (e.g., UI visibility, selected model) and use `useFrame` for high-frequency "animation state".
 
-*   **Structure**: The configuration uses nested keys (e.g., `points.zones.matrix.key`) and supports inheritance with `$extends` to reduce redundancy.
+## `zustand` Best Practices
 
-This information is sufficient to start designing the data model for our application. The next research tasks will build on this foundation.
+`zustand` is a minimalistic state management library. Its simplicity requires adherence to a few core principles to maximize performance.
 
-### 2. Data Mapping from UI to YAML
+### Core Principles
 
-Mapping an interactive UI state to a declarative YAML structure requires a clear strategy. The following best practices will be adopted:
+- **Small, Focused Stores**: Instead of a single monolithic store, create multiple smaller stores for different concerns (e.g., `useLayoutStore`, `useUISettingsStore`). This improves modularity and makes the app easier to reason about.
+- **Atomic Selectors**: Components should only subscribe to the smallest possible slice of state they need. This prevents unnecessary re-renders.
 
-*   **Separation of Concerns**:
-    *   **UI State (The "What")**: The application's state, managed by Zustand, will be a direct representation of the Ergogen data structure. This ensures that the state is always serializable to a valid Ergogen YAML file.
-    *   **Application Logic (The "How")**: React components will be responsible for rendering the UI based on the state and dispatching actions to modify the state. The logic for generating the YAML file will be encapsulated within a dedicated module.
+    - **DO**: `const bears = useStore(state => state.bears);`
+    - **DON'T**: `const state = useStore(state => state);`
 
-*   **Hierarchical Structure**:
-    *   The UI will be composed of components that mirror the hierarchical nature of the Ergogen data model (e.g., `zones`, `points`, `keys`).
-    *   This component-based approach will make the UI easier to manage and reason about.
+- **Use `useShallow` for Multiple Properties**: If a component needs multiple properties from a store, use the `shallow` equality checker to prevent re-renders when other parts of the state change.
 
-*   **Declarative State Management**:
-    *   The Zustand store will hold the entire keyboard layout state.
-    *   UI components will subscribe to the store and automatically re-render when the state changes.
-    *   The initial state can be loaded from a template or a user-provided file.
+    ```javascript
+    import { shallow } from 'zustand/shallow'
+    const { todos, isSubscribed } = useStore(
+      (state) => ({ todos: state.todos, isSubsecreted: state.isSubscribed }),
+      shallow
+    );
+    ```
 
-*   **Event Handling**:
-    *   User interactions (e.g., dragging a key, changing a property) will trigger actions that update the Zustand store.
-    *   These actions will be defined in the store and will be the only way to modify the state, ensuring a unidirectional data flow.
+### State and Actions
 
-*   **YAML Serialization**:
-    *   The `js-yaml` library will be used to serialize the Zustand store's state into a YAML string.
-    *   A dedicated function will be responsible for this conversion, ensuring that the output is a valid Ergogen configuration.
+- **Separate State from Actions**: Keep state and the actions that modify it co-located in the store, but defined separately. This improves organization.
+- **Business Logic in Actions**: Encapsulate state-related business logic within the store's actions rather than in components. This makes components cleaner and logic more reusable and testable.
+- **Export Custom Hooks**: Avoid exporting the main `useStore` hook. Instead, export custom selector hooks (e.g., `export const useBears = () => useBearStore(state => state.bears);`). This enforces the use of atomic selectors.
 
-### 3. Client-Side YAML Generation and Download
+### Middleware
 
-The `js-yaml` library is well-suited for this task. The process for generating and downloading the YAML file will be as follows:
-
-1.  **Define Data**: The data to be converted to YAML will be the application's state, which is a JavaScript object.
-2.  **Convert to YAML**: The `jsyaml.dump()` method will be used to serialize the JavaScript object into a YAML string.
-3.  **Create a Blob**: A `Blob` object will be created from the YAML string with the MIME type `text/yaml`.
-4.  **Create Download Link**: `URL.createObjectURL()` will be used to generate a temporary URL for the `Blob`.
-5.  **Trigger Download**: A temporary anchor (`<a>`) element will be created with its `href` set to the Blob's URL and the `download` attribute set to the desired filename (e.g., `layout.yaml`). The anchor's `click()` method will be called to trigger the download.
-6.  **Cleanup**: The temporary anchor element and the URL will be removed after the download is triggered.
-
-### 4. Zustand State Management for Serialization
-
-For the application state to be cleanly serializable to YAML, the Zustand store must be managed carefully. The following best practices will be followed:
-
-*   **Serializable State**: The state will consist of only plain JavaScript objects, arrays, and primitives. No functions, Promises, `Map`, `Set`, or class instances will be stored in the state.
-
-*   **Separation of Concerns**: 
-    *   **State**: The store will hold the data representing the keyboard layout.
-    *   **Actions**: The store will also define actions that modify the state. These actions will be functions outside of the state object itself, ensuring that the state remains purely data.
-
-*   **Derived State**: To keep the state minimal, derived data will be computed on the fly using selectors rather than being stored in the state. For example, the final Ergogen YAML output will be generated from the state when needed, not stored in the state itself.
-
-*   **Persistence (Future)**: While not part of the MVP, following these practices will allow for easy integration of persistence middleware like `zustand/middleware/persist` in the future. The `partialize` option can be used to select only the serializable parts of the state for persistence.
-
-### 5. 3D Performance Optimization for @react-three/fiber
-
-To ensure a smooth user experience, especially during 3D view manipulation, the following performance optimization techniques will be considered:
-
-*   **Reduce Draw Calls**:
-    *   **Instancing**: For rendering the keycaps, `InstancedMesh` will be used. This will allow all keycaps to be rendered in a single draw call.
-    *   **Merging Geometries**: The keyboard case and plate will be static, so their geometries can be merged to reduce draw calls.
-
-*   **Optimize Assets**:
-    *   **Reuse Geometries and Materials**: Geometries and materials for the keycaps and other components will be created once and reused.
-    *   **Asset Compression**: 3D models will be compressed using `gltfjsx`.
-
-*   **Efficient Rendering**:
-    *   **On-Demand Rendering**: The `frameloop` prop of the `<Canvas>` will be set to `"demand"`. This will cause the scene to re-render only when the state changes, which is ideal for a UI-driven application.
-    *   **Manual Frame Invalidation**: When direct manipulation of the 3D scene occurs (e.g., camera controls), the `invalidate` function from `useThree` will be called to trigger a re-render.
-
-*   **Performance Monitoring**:
-    *   The `r3f-perf` tool will be used during development to monitor performance and identify potential bottlenecks.
-
+- **`devtools`**: Integrates with Redux DevTools for easier debugging.
+- **`persist`**: For persisting state to `localStorage` or `sessionStorage`.
+- **`immer`**: Simplifies immutable updates, especially for complex, nested state.

@@ -19,6 +19,19 @@
 ### Primary User Story
 A user wants to design a custom ergonomic mechanical keyboard layout. They can start from scratch or use a popular template. They can arrange keys, group them, and make fine adjustments to their position and rotation. The user can see a live 3D preview of their design.
 
+### Initial User Workflow
+
+When the page is first loaded, the user is presented with three options to start their keyboard design:
+
+1.  **Split Keyboard:** Start with a pre-defined split keyboard layout.
+    *   When selected, the user is presented with a list of popular layouts.
+    *   For the first iteration, the only option is "Corne (crkbd)".
+    *   The "Corne (crkbd)" layout is pre-defined with 2 zones: a 6x3 matrix and a 3x1 thumbfan.
+    *   It's assumed the halves are fully symmetrical.
+    *   Once the selection is made, the page displays the layout view, where each key is visible as a rectangle and selectable.
+2.  **Unibody:** (Dummy option for now) Start with a pre-defined unibody keyboard layout.
+3.  **Custom:** (Dummy option for now) Start from a blank canvas to create a custom layout.
+
 ### Acceptance Scenarios
 1. **Given** a user wants to create a new keyboard layout, **When** they select the "split" type and the "Corne" preset, **Then** the system should display a default Corne layout split into two halves.
 2. **Given** a user has a layout open, **When** they select a single key and use the "nudge right" control, **Then** the key's position should update in the layout and the 3D preview.

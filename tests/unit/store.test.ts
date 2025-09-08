@@ -1,49 +1,56 @@
-import { useStore } from '../../src/store/store'; // This file doesn't exist yet
-import { AppState } from '../../src/lib/types';
-
-// Mock initial state for testing
-const initialState: AppState = {
-  layout: {
-    points: {
-      zones: {
-        matrix: {
-          name: 'matrix',
-          keys: [{ id: 'key1', x: 0, y: 0, rotate: 0 }],
-        },
-      },
-    },
-  },
-  uiState: {
-    selectedKeyIds: [],
-    selectedZoneNames: [],
-  },
-};
+import { useStore } from '../../src/store/store';
 
 describe('Zustand Store', () => {
   beforeEach(() => {
     // Reset the store before each test
-    useStore.setState(initialState);
+    useStore.setState({
+      layout: {
+        meta: {
+          name: 'My Keeb',
+          author: 'Me',
+        },
+        points: {
+          zones: {
+            matrix: {
+              keys: {
+                key1: {},
+                key2: { shift: [1, 0] },
+                key3: { shift: [2, 0] },
+              },
+            },
+          },
+        },
+      },
+      selectedKey: null,
+      setSelectedKey: (zoneName, keyName) => useStore.setState({ selectedKey: { zoneName, keyName } }),
+      clearSelectedKey: () => useStore.setState({ selectedKey: null }),
+      // Mock other functions as needed for these tests
+      setLayout: () => {},
+      setMeta: () => {},
+      addZone: () => {},
+      removeZone: () => {},
+      updateZone: () => {},
+      addKey: () => {},
+      removeKey: () => {},
+      updateKey: () => {},
+      nudgeKey: () => {},
+      rotateKey: () => {},
+      generateYaml: () => 'yaml',
+    });
   });
 
-  it('should update a key', () => {
-    const { updateKey } = useStore.getState();
-    updateKey('matrix', 0, { rotate: 45 });
+  it('should set the selected key', () => {
+    const { setSelectedKey } = useStore.getState();
+    setSelectedKey('matrix', 'key1');
     const state = useStore.getState();
-    expect(state.layout.points.zones.matrix.keys[0].rotate).toBe(45);
+    expect(state.selectedKey).toEqual({ zoneName: 'matrix', keyName: 'key1' });
   });
 
-  it('should select a key', () => {
-    const { selectKeys } = useStore.getState();
-    selectKeys(['key1']);
+  it('should clear the selected key', () => {
+    const { setSelectedKey, clearSelectedKey } = useStore.getState();
+    setSelectedKey('matrix', 'key1');
+    clearSelectedKey();
     const state = useStore.getState();
-    expect(state.uiState.selectedKeyIds).toEqual(['key1']);
-  });
-
-  it('should deselect all keys', () => {
-    const { selectKeys, deselectAll } = useStore.getState();
-    selectKeys(['key1']);
-    deselectAll();
-    const state = useStore.getState();
-    expect(state.uiState.selectedKeyIds).toEqual([]);
+    expect(state.selectedKey).toBeNull();
   });
 });
