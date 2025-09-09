@@ -7,7 +7,8 @@ export const KeyView = ({ zoneName, keyName, keyData }: { zoneName: string; keyN
   const { selectedKey, setSelectedKey } = useStore();
   const isSelected = selectedKey?.zoneName === zoneName && selectedKey?.keyName === keyName;
 
-  const handleClick = () => {
+  const handleClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
     setSelectedKey(zoneName, keyName);
   };
 
