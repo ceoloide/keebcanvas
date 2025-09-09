@@ -1,6 +1,7 @@
 "use client";
 
 import { Canvas } from '@react-three/fiber';
+import { OrbitControls } from '@react-three/drei';
 import { useStore } from '../store/store';
 
 const Key = ({ position }: { position: [number, number, number] }) => {
@@ -30,6 +31,7 @@ export const PreviewView = () => {
             return <Key key={i} position={position} />;
           })
         )}
+        <OrbitControls />
       </Canvas>
     </div>
   );

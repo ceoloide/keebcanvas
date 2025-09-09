@@ -1,11 +1,11 @@
 "use client";
 
 import { useStore } from '../store/store';
-import { ZoneView } from './ZoneView';
 import { useEffect } from 'react';
+import { LayoutCanvas } from './LayoutCanvas';
 
 export const LayoutView = () => {
-  const { layout, nudgeKey, rotateKey } = useStore();
+  const { nudgeKey, rotateKey } = useStore();
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -40,9 +40,7 @@ export const LayoutView = () => {
 
   return (
     <div>
-      {Object.entries(layout.points.zones).map(([zoneName, zone]) => (
-        <ZoneView key={zoneName} zoneName={zoneName} zone={zone} />
-      ))}
+      <LayoutCanvas />
     </div>
   );
 };
